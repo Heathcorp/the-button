@@ -7,9 +7,6 @@
       "hosting": {
         "thebutton": [
           "lost-pixels-the-button"
-        ],
-        "mainsite": [
-          "lost-pixels-prod"
         ]
       }
     }

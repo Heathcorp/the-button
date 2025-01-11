@@ -1,18 +1,18 @@
 name: Deploy THE BUTTON
 
-on: []
-  # push:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - experiments/thebutton/**
-  #     # - .github/workflows/thebutton-hosting.yml
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - experiments/thebutton/**
+      - .github/workflows/thebutton-hosting.yml
 
 jobs:
   build_and_deploy_tb:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: 18
