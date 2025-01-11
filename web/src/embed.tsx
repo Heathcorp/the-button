@@ -13,4 +13,4 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
 }
 
 // TODO: refactor this ridiculous
-render(() => <App embed={false} />, root!);
+render(() => <App embed={true} />, root!);

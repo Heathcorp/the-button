@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
-import solidPlugin from 'vite-plugin-solid';
+import { defineConfig } from "vite";
+import solidPlugin from "vite-plugin-solid";
 
-import path from 'path';
+import path from "path";
 
 export default defineConfig({
   plugins: [solidPlugin()],
@@ -9,11 +9,17 @@ export default defineConfig({
     port: 3005,
   },
   build: {
-    target: 'esnext',
+    target: "esnext",
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        embed: "embed.html",
+      },
+    },
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      "@": path.resolve(__dirname, "src"),
     },
   },
 });

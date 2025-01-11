@@ -7,49 +7,50 @@ import {
   onCleanup,
   on,
   Show,
-} from 'solid-js';
+} from "solid-js";
 
-import LogoType from '../components/LogoType';
+import LogoType from "../components/LogoType";
 
-import './pages.css';
-import TheButton from '../components/TheButton';
-import Counter from '../components/Counter';
+import "./pages.css";
+import TheButton from "../components/TheButton";
+import Counter from "../components/Counter";
 
-import { FirebaseAppContext } from '../contexts/FirebaseAppProvider';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { Turnstile, TurnstileRef } from '@nerimity/solid-turnstile';
-import { makePersisted } from '@solid-primitives/storage';
+import { FirebaseAppContext } from "../contexts/FirebaseAppProvider";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { Turnstile, TurnstileRef } from "@nerimity/solid-turnstile";
+import { makePersisted } from "@solid-primitives/storage";
+import EmbedLogoButton from "../components/EmbedLogoButton";
 
 const SPOOLING_TIMEOUT = 1000;
 const INACTIVE_TIMEOUT = 30000;
 const REFETCH_INTERVAL = 3000;
 
-const MainPage: Component = (props) => {
+const MainPage: Component<{ embed: boolean }> = (props) => {
   // firebase initialisation
   const firebaseApp = useContext(FirebaseAppContext);
   const functions = getFunctions(firebaseApp);
   const getButtonCountFunction = httpsCallable<
     unknown,
     { success: boolean; count?: number; reason?: string; frozen?: boolean }
-  >(functions, 'buttonCount');
+  >(functions, "buttonCount");
   const pressButtonFunction = httpsCallable<
     { count?: number; turnstileToken: string },
     { success: boolean; reason?: string; frozen?: boolean }
-  >(functions, 'buttonPressed');
+  >(functions, "buttonPressed");
 
   // get the button count/store the button count
   const [loadingStatus, setLoadingStatus] = createSignal<
-    'LOADED' | 'LOADING' | 'REFETCHING' | 'ERROR' | 'UPLOADING'
-  >('LOADING');
+    "LOADED" | "LOADING" | "REFETCHING" | "ERROR" | "UPLOADING"
+  >("LOADING");
   const [countFrozenGlobally, setCountFrozenGlobally] = createSignal(false);
   const [count, { mutate: setCount, refetch }] = createResource<number>(
     (source, { value, refetching }) => {
       if (refetching) {
-        console.log('REFETCHING');
-        setLoadingStatus('REFETCHING');
+        console.log("REFETCHING");
+        setLoadingStatus("REFETCHING");
       } else {
-        console.log('FIRST LOAD');
-        setLoadingStatus('LOADING');
+        console.log("FIRST LOAD");
+        setLoadingStatus("LOADING");
       }
       let fail: ErrorOptions | undefined | string = undefined;
       return new Promise((resolve, reject) => {
@@ -59,7 +60,7 @@ const MainPage: Component = (props) => {
             if (!resp.data.success) {
               fail = resp.data.reason;
             }
-            setLoadingStatus('LOADED');
+            setLoadingStatus("LOADED");
             resolve(resp.data.count ?? value ?? 0);
             if (resp.data.frozen) {
               setCountFrozenGlobally(true);
@@ -70,10 +71,10 @@ const MainPage: Component = (props) => {
           })
           .finally(() => {
             if (fail) {
-              setLoadingStatus('ERROR');
+              setLoadingStatus("ERROR");
               console.error(fail);
               reject(
-                new Error('get button count failed:' + JSON.stringify(fail))
+                new Error("get button count failed:" + JSON.stringify(fail))
               );
             }
           });
@@ -95,10 +96,10 @@ const MainPage: Component = (props) => {
     };
     let fail: string | undefined;
     let frozenReturned = false;
-    setLoadingStatus('UPLOADING');
+    setLoadingStatus("UPLOADING");
     pressButtonFunction({
       count: cachedSpooledPresses,
-      turnstileToken: turnstileToken() ?? '',
+      turnstileToken: turnstileToken() ?? "",
     })
       .then((value) => {
         console.log(value);
@@ -117,18 +118,18 @@ const MainPage: Component = (props) => {
         // reset captcha
         turnstileRef?.reset();
         if (fail) {
-          setLoadingStatus('ERROR');
+          setLoadingStatus("ERROR");
           revert();
-          if (fail === 'captcha failed') {
+          if (fail === "captcha failed") {
             // captcha failure return
             // do something
           }
         } else {
-          setLoadingStatus('LOADED');
+          setLoadingStatus("LOADED");
           refetchIntervalId = setInterval(refetch, REFETCH_INTERVAL);
         }
         if (frozenReturned) {
-          console.log('COUNT FROZEN RETURNED');
+          console.log("COUNT FROZEN RETURNED");
           setCountFrozenGlobally(true);
           setSpooledPresses(0);
         }
@@ -192,35 +193,65 @@ const MainPage: Component = (props) => {
   });
 
   createEffect(() => {
-    console.log('main count:', count());
+    console.log("main count:", count());
   });
 
   return (
-    <div class="pageContainer">
-      <div class="contentContainer">
-        <LogoType />
+    <div
+      classList={{
+        ["pageContainer"]: true,
+        ["pageContainer_embed"]: props.embed,
+      }}
+    >
+      <div
+        classList={{
+          ["contentContainer"]: true,
+          ["contentContainer_embed"]: props.embed,
+        }}
+      >
+        <Show
+          when={!props.embed}
+          fallback={
+            <EmbedLogoButton
+              enabled={!countFrozenGlobally()}
+              onClick={
+                !countFrozenGlobally()
+                  ? () => setSpooledPresses((prevSpooled) => prevSpooled + 1)
+                  : undefined
+              }
+            />
+          }
+        >
+          <LogoType embed={props.embed} />
+        </Show>
         {/* Stats */}
         <Counter
           count={count() + spooledPresses()}
           loadingStatus={loadingStatus()}
           frozen={countFrozenGlobally()}
         />
-        <div style={{ 'flex-direction': 'column', padding: '1rem' }}>
-          <TheButton
-            enabled={!countFrozenGlobally()}
-            onClick={
-              !countFrozenGlobally()
-                ? () => setSpooledPresses((prevSpooled) => prevSpooled + 1)
-                : undefined
+        <Show when={!props.embed}>
+          <Show
+            when={!countFrozenGlobally()}
+            fallback={
+              <div class="infoText">
+                {
+                  "The Button has been frozen for maintenance. Please check again later."
+                }
+              </div>
             }
-          />
-        </div>
-        <Show when={countFrozenGlobally()}>
-          <div class="infoText">
-            {
-              'The Button has been frozen for maintenance. Please check again later.'
-            }
-          </div>
+          >
+            <div style={{ "flex-direction": "column", padding: "1rem" }}>
+              <TheButton
+                enabled={!countFrozenGlobally()}
+                onClick={
+                  !countFrozenGlobally()
+                    ? () => setSpooledPresses((prevSpooled) => prevSpooled + 1)
+                    : undefined
+                }
+              />
+            </div>
+          </Show>
         </Show>
       </div>
       {/* TODO: PARAMETERIZE PROPERLY AND REFACTOR */}

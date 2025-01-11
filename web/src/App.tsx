@@ -1,19 +1,22 @@
-import { Component } from 'solid-js';
-import { Router, Routes, Route } from '@solidjs/router';
+import { Component } from "solid-js";
+import { Router, Routes, Route } from "@solidjs/router";
 
-import './fonts.css';
-import './index.css';
+import "./fonts.css";
+import "./index.css";
 
-import FirebaseAppProvider from './contexts/FirebaseAppProvider';
-import MainPage from './pages/MainPage';
+import FirebaseAppProvider from "./contexts/FirebaseAppProvider";
+import MainPage from "./pages/MainPage";
 
 // TODO: REFACTOR THIS
-const App: Component = () => {
+const App: Component<{ embed: boolean }> = (props) => {
   return (
     <FirebaseAppProvider>
       <Router>
         <Routes>
-          <Route path={['/', '/*']} component={MainPage} />
+          <Route
+            path={["/", "/*"]}
+            element={<MainPage embed={props.embed} />}
+          />
         </Routes>
       </Router>
     </FirebaseAppProvider>
