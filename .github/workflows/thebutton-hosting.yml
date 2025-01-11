@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - experiments/thebutton/**
+      - web/**
       - .github/workflows/thebutton-hosting.yml
 
 jobs:
